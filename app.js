@@ -6,25 +6,25 @@
 // Apps Script → Deploy → New Deployment → Web App → Copy URL
 // ============================================================
 
-const API_URL = 'YOUR_WEB_APP_URL_HERE';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyNhaarRnzJeTGwjdEBgShbrwqRK4Gb4FiIgLGBq8Nha7zNr3Ogg4W2AlQp2fWd4jX1Xg/exec';
 
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
-  tab:        'daily',       // 'daily' | 'monthly'
-  records:    [],
-  filtered:   [],
+  tab: 'daily',       // 'daily' | 'monthly'
+  records: [],
+  filtered: [],
   categories: { daily: [], monthly: [] },
-  search:     '',
-  filterCat:  '',
-  filterMonth:'',
-  editing:    null,          // record being edited
+  search: '',
+  filterCat: '',
+  filterMonth: '',
+  editing: null,          // record being edited
   pendingDelete: null
 };
 
 // ── API ───────────────────────────────────────────────────────
 async function apiFetch(params) {
   const url = new URL(API_URL);
-  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   const res = await fetch(url.toString());
   return res.json();
 }
@@ -43,12 +43,12 @@ async function init() {
   try {
     const cats = await apiFetch({ action: 'categories' });
     if (cats.success) {
-      state.categories.daily   = cats.daily;
+      state.categories.daily = cats.daily;
       state.categories.monthly = cats.monthly;
     }
     await loadRecords();
     setApiStatus('connected');
-  } catch(e) {
+  } catch (e) {
     setApiStatus('error');
     showToast('Cannot connect to API. Check your URL in app.js.', 'error');
   }
@@ -67,7 +67,7 @@ async function loadRecords() {
     } else {
       showToast('Error loading records: ' + res.error, 'error');
     }
-  } catch(e) {
+  } catch (e) {
     showToast('Network error: ' + e.message, 'error');
   }
   setLoading(false);
@@ -76,7 +76,7 @@ async function loadRecords() {
 // ── FILTERS ───────────────────────────────────────────────────
 function applyFilters() {
   let rows = [...state.records];
-  const q  = state.search.toLowerCase().trim();
+  const q = state.search.toLowerCase().trim();
 
   if (q) {
     rows = rows.filter(r => {
@@ -100,22 +100,22 @@ function applyFilters() {
 
 // ── RENDER ────────────────────────────────────────────────────
 function renderStats() {
-  const rows  = state.records;
-  const total = rows.reduce((s,r) => s + (parseFloat(r['Amount']) || 0), 0);
+  const rows = state.records;
+  const total = rows.reduce((s, r) => s + (parseFloat(r['Amount']) || 0), 0);
   const count = rows.length;
 
   // Most recent date
   const dates = rows.map(r => r['Date'] || r['Month (YYYY-MM)'] || '').filter(Boolean).sort();
   const latest = dates.length ? dates[dates.length - 1] : '—';
 
-  document.getElementById('statCount').textContent  = count;
-  document.getElementById('statTotal').textContent  = '₱' + total.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+  document.getElementById('statCount').textContent = count;
+  document.getElementById('statTotal').textContent = '₱' + total.toLocaleString('en-PH', { minimumFractionDigits: 2 });
   document.getElementById('statLatest').textContent = latest;
 }
 
 function renderTable() {
   const tbody = document.getElementById('tableBody');
-  const rows  = state.filtered;
+  const rows = state.filtered;
 
   if (rows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No records found.</td></tr>`;
@@ -124,10 +124,10 @@ function renderTable() {
 
   tbody.innerHTML = rows.map(r => {
     const isMonthly = state.tab === 'monthly';
-    const date      = isMonthly ? (r['Month (YYYY-MM)'] || '') : (r['Date'] || '');
-    const cat       = r['Category']  || '';
-    const amount    = parseFloat(r['Amount']) || 0;
-    const notes     = r['Notes']     || '';
+    const date = isMonthly ? (r['Month (YYYY-MM)'] || '') : (r['Date'] || '');
+    const cat = r['Category'] || '';
+    const amount = parseFloat(r['Amount']) || 0;
+    const notes = r['Notes'] || '';
     const recurring = r['Recurring (Y/N)'] || '';
     const enteredBy = r['Entered By'] || '';
 
@@ -161,7 +161,7 @@ function renderTable() {
 }
 
 function renderCategoryFilter() {
-  const sel  = document.getElementById('filterCat');
+  const sel = document.getElementById('filterCat');
   const cats = state.categories[state.tab] || [];
   sel.innerHTML = `<option value="">All categories</option>` +
     cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
@@ -169,7 +169,7 @@ function renderCategoryFilter() {
 }
 
 function renderFormCategories() {
-  const sel  = document.getElementById('fieldCategory');
+  const sel = document.getElementById('fieldCategory');
   const cats = state.categories[state.tab] || [];
   sel.innerHTML = cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
 }
@@ -181,9 +181,9 @@ function renderMonthFilter() {
 
 function renderFormFields() {
   const isMonthly = state.tab === 'monthly';
-  document.getElementById('fieldDateWrap').style.display    = isMonthly ? 'none' : '';
-  document.getElementById('fieldMonthWrap').style.display   = isMonthly ? '' : 'none';
-  document.getElementById('fieldRecurWrap').style.display   = isMonthly ? '' : 'none';
+  document.getElementById('fieldDateWrap').style.display = isMonthly ? 'none' : '';
+  document.getElementById('fieldMonthWrap').style.display = isMonthly ? '' : 'none';
+  document.getElementById('fieldRecurWrap').style.display = isMonthly ? '' : 'none';
   document.getElementById('fieldEnteredWrap').style.display = isMonthly ? 'none' : '';
 }
 
@@ -221,8 +221,8 @@ function openEdit(rowIndex) {
     document.getElementById('fieldDate').value = rec['Date'] || '';
   }
   document.getElementById('fieldCategory').value = rec['Category'] || '';
-  document.getElementById('fieldAmount').value   = rec['Amount']   || '';
-  document.getElementById('fieldNotes').value    = rec['Notes']    || '';
+  document.getElementById('fieldAmount').value = rec['Amount'] || '';
+  document.getElementById('fieldNotes').value = rec['Notes'] || '';
   if (isMonthly) {
     document.getElementById('fieldRecurring').value = rec['Recurring (Y/N)'] || 'No';
   } else {
@@ -236,18 +236,18 @@ async function saveRecord() {
   const record = {};
 
   if (isMonthly) {
-    record['Month (YYYY-MM)']  = document.getElementById('fieldMonth').value.trim();
-    record['Category']         = document.getElementById('fieldCategory').value;
-    record['Amount']           = document.getElementById('fieldAmount').value;
-    record['Notes']            = document.getElementById('fieldNotes').value.trim();
-    record['Recurring (Y/N)']  = document.getElementById('fieldRecurring').value;
+    record['Month (YYYY-MM)'] = document.getElementById('fieldMonth').value.trim();
+    record['Category'] = document.getElementById('fieldCategory').value;
+    record['Amount'] = document.getElementById('fieldAmount').value;
+    record['Notes'] = document.getElementById('fieldNotes').value.trim();
+    record['Recurring (Y/N)'] = document.getElementById('fieldRecurring').value;
     if (!record['Month (YYYY-MM)']) { showToast('Month is required.', 'error'); return; }
   } else {
-    record['Date']             = document.getElementById('fieldDate').value.trim();
-    record['Category']         = document.getElementById('fieldCategory').value;
-    record['Amount']           = document.getElementById('fieldAmount').value;
-    record['Notes']            = document.getElementById('fieldNotes').value.trim();
-    record['Entered By']       = document.getElementById('fieldEnteredBy').value.trim() || 'Staff';
+    record['Date'] = document.getElementById('fieldDate').value.trim();
+    record['Category'] = document.getElementById('fieldCategory').value;
+    record['Amount'] = document.getElementById('fieldAmount').value;
+    record['Notes'] = document.getElementById('fieldNotes').value.trim();
+    record['Entered By'] = document.getElementById('fieldEnteredBy').value.trim() || 'Staff';
     if (!record['Date']) { showToast('Date is required.', 'error'); return; }
   }
 
@@ -270,7 +270,7 @@ async function saveRecord() {
     } else {
       showToast('Error: ' + res.error, 'error');
     }
-  } catch(e) {
+  } catch (e) {
     showToast('Network error: ' + e.message, 'error');
   }
   setLoading(false);
@@ -294,7 +294,7 @@ async function executeDelete() {
     } else {
       showToast('Error: ' + res.error, 'error');
     }
-  } catch(e) {
+  } catch (e) {
     showToast('Network error: ' + e.message, 'error');
   }
   state.pendingDelete = null;
@@ -303,13 +303,13 @@ async function executeDelete() {
 
 // ── TAB SWITCH ────────────────────────────────────────────────
 function switchTab(tab) {
-  state.tab        = tab;
-  state.search     = '';
-  state.filterCat  = '';
-  state.filterMonth= '';
-  document.getElementById('searchInput').value  = '';
-  document.getElementById('filterCat').value    = '';
-  document.getElementById('monthFilter').value  = '';
+  state.tab = tab;
+  state.search = '';
+  state.filterCat = '';
+  state.filterMonth = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterCat').value = '';
+  document.getElementById('monthFilter').value = '';
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
@@ -332,7 +332,7 @@ function switchTab(tab) {
 
 // ── UTILS ─────────────────────────────────────────────────────
 function esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -340,11 +340,11 @@ function todayStr() {
 function currentMonthStr() {
   return new Date().toISOString().slice(0, 7);
 }
-function openModal()  { document.getElementById('modalOverlay').classList.add('open'); }
+function openModal() { document.getElementById('modalOverlay').classList.add('open'); }
 function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); state.editing = null; }
-function resetForm()  {
-  ['fieldDate','fieldMonth','fieldAmount','fieldNotes','fieldEnteredBy']
-    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+function resetForm() {
+  ['fieldDate', 'fieldMonth', 'fieldAmount', 'fieldNotes', 'fieldEnteredBy']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const rc = document.getElementById('fieldRecurring');
   if (rc) rc.value = 'No';
 }
@@ -362,7 +362,7 @@ function setApiStatus(status) {
 
 let toastTimer;
 function showToast(msg, type = '') {
-  const c    = document.getElementById('toastContainer');
+  const c = document.getElementById('toastContainer');
   const toast = document.createElement('div');
   toast.className = 'toast ' + type;
   toast.textContent = msg;
