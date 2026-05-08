@@ -14,6 +14,7 @@ let state = {
   records: [],
   filtered: [],
   categories: { daily: [], monthly: [] },
+  employees: [],            // active employees from external sheet
   search: '',
   filterCat: '',
   filterMonth: '',
@@ -41,10 +42,17 @@ async function apiPost(body) {
 async function init() {
   setLoading(true);
   try {
-    const cats = await apiFetch({ action: 'categories' });
+    // Load categories and employees in parallel
+    const [cats, emps] = await Promise.all([
+      apiFetch({ action: 'categories' }),
+      apiFetch({ action: 'employees' })
+    ]);
     if (cats.success) {
       state.categories.daily = cats.daily;
       state.categories.monthly = cats.monthly;
+    }
+    if (emps.success) {
+      state.employees = emps.employees || [];
     }
     await loadRecords();
     setApiStatus('connected');
@@ -174,6 +182,21 @@ function renderFormCategories() {
   sel.innerHTML = cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
 }
 
+function renderEmployeeDropdown(selectedName) {
+  const sel = document.getElementById('fieldEnteredBy');
+  if (!sel) return;
+  const emps = state.employees;
+  if (emps.length === 0) {
+    sel.innerHTML = '<option value="Staff">Staff</option>';
+    return;
+  }
+  sel.innerHTML =
+    '<option value="">— Select —</option>' +
+    emps.map(e => `<option value="${esc(e)}" ${e === selectedName ? 'selected' : ''}>${esc(e)}</option>`).join('') +
+    '<option value="Staff">Other / Staff</option>';
+  if (selectedName) sel.value = selectedName;
+}
+
 function renderMonthFilter() {
   const wrap = document.getElementById('monthFilterWrap');
   wrap.style.display = state.tab === 'daily' ? '' : 'none';
@@ -195,6 +218,7 @@ function openAdd() {
   resetForm();
   renderFormFields();
   renderFormCategories();
+  renderEmployeeDropdown('');
   // Default date to today / current month
   if (state.tab === 'daily') {
     document.getElementById('fieldDate').value = todayStr();
@@ -213,6 +237,7 @@ function openEdit(rowIndex) {
   resetForm();
   renderFormFields();
   renderFormCategories();
+  renderEmployeeDropdown(rec['Entered By'] || '');
 
   const isMonthly = state.tab === 'monthly';
   if (isMonthly) {
@@ -247,7 +272,8 @@ async function saveRecord() {
     record['Category'] = document.getElementById('fieldCategory').value;
     record['Amount'] = document.getElementById('fieldAmount').value;
     record['Notes'] = document.getElementById('fieldNotes').value.trim();
-    record['Entered By'] = document.getElementById('fieldEnteredBy').value.trim() || 'Staff';
+    const ebEl = document.getElementById('fieldEnteredBy');
+    record['Entered By'] = (ebEl ? ebEl.value.trim() : '') || 'Staff';
     if (!record['Date']) { showToast('Date is required.', 'error'); return; }
   }
 

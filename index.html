@@ -1,160 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quinta Cafe — Expense Manager</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
 
-<div id="loadingBar" class="loading-bar"></div>
+  <div id="loadingBar" class="loading-bar"></div>
 
-<div class="app-shell">
+  <div class="app-shell">
 
-  <!-- HEADER -->
-  <header class="app-header">
-    <div class="header-brand">
-      <div class="header-logo">Q</div>
-      <div>
-        <div class="header-title">Expense Manager</div>
-        <div class="header-sub">Quinta Cafe &nbsp;·&nbsp; Bataan, Philippines</div>
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="header-logo">Q</div>
+        <div>
+          <div class="header-title">Expense Manager</div>
+          <div class="header-sub">Quinta Cafe &nbsp;·&nbsp; Bataan, Philippines</div>
+        </div>
+      </div>
+      <div class="api-badge">
+        <div class="api-dot" id="apiDot"></div>
+        <span id="apiTxt">Connecting…</span>
+      </div>
+    </header>
+
+    <!-- TABS -->
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="daily" onclick="switchTab('daily')">Daily Expenses</button>
+      <button class="tab-btn" data-tab="monthly" onclick="switchTab('monthly')">Monthly Expenses</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-strip">
+      <div class="stat-card">
+        <div class="stat-label">Total Records</div>
+        <div class="stat-value" id="statCount">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Amount</div>
+        <div class="stat-value" id="statTotal">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Latest Entry</div>
+        <div class="stat-value" id="statLatest" style="font-size:15px">—</div>
       </div>
     </div>
-    <div class="api-badge">
-      <div class="api-dot" id="apiDot"></div>
-      <span id="apiTxt">Connecting…</span>
-    </div>
-  </header>
 
-  <!-- TABS -->
-  <div class="tab-row">
-    <button class="tab-btn active" data-tab="daily"   onclick="switchTab('daily')">Daily Expenses</button>
-    <button class="tab-btn"        data-tab="monthly" onclick="switchTab('monthly')">Monthly Expenses</button>
-  </div>
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input type="search" id="searchInput" class="search-input" placeholder="Search…" />
+        <select id="filterCat" class="filter-select" onchange=""></select>
+        <div id="monthFilterWrap">
+          <input type="month" id="monthFilter" class="filter-select" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="openAdd()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Record
+      </button>
+    </div>
 
-  <!-- STATS -->
-  <div class="stats-strip">
-    <div class="stat-card">
-      <div class="stat-label">Total Records</div>
-      <div class="stat-value" id="statCount">—</div>
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead id="tableHead">
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Notes</th>
+            <th>Entered By</th>
+            <th style="width:80px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="6" class="empty-state">Loading…</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Amount</div>
-      <div class="stat-value" id="statTotal">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Latest Entry</div>
-      <div class="stat-value" id="statLatest" style="font-size:15px">—</div>
-    </div>
-  </div>
 
-  <!-- TOOLBAR -->
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <input type="search" id="searchInput" class="search-input" placeholder="Search…" />
-      <select id="filterCat" class="filter-select" onchange=""></select>
-      <div id="monthFilterWrap">
-        <input type="month" id="monthFilter" class="filter-select" />
+  </div><!-- /app-shell -->
+
+  <!-- ADD / EDIT MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Add Expense</div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+
+      <!-- Daily: Date field -->
+      <div class="form-row" id="fieldDateWrap">
+        <label class="form-label">Date</label>
+        <input type="date" id="fieldDate" class="form-input" />
+      </div>
+
+      <!-- Monthly: Month field -->
+      <div class="form-row" id="fieldMonthWrap" style="display:none">
+        <label class="form-label">Month</label>
+        <input type="month" id="fieldMonth" class="form-input" />
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Category</label>
+        <select id="fieldCategory" class="form-select"></select>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Amount (₱)</label>
+        <input type="number" id="fieldAmount" class="form-input" min="0.01" step="0.01" placeholder="0.00" />
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Notes</label>
+        <textarea id="fieldNotes" class="form-textarea" placeholder="Optional note…"></textarea>
+      </div>
+
+      <!-- Daily only: Entered By -->
+      <div class="form-row" id="fieldEnteredWrap">
+        <label class="form-label">Entered By</label>
+        <select id="fieldEnteredBy" class="form-select">
+          <option value="">Loading employees…</option>
+        </select>
+      </div>
+
+      <!-- Monthly only: Recurring -->
+      <div class="form-row" id="fieldRecurWrap" style="display:none">
+        <label class="form-label">Recurring</label>
+        <select id="fieldRecurring" class="form-select">
+          <option value="Yes">Yes</option>
+          <option value="No" selected>No</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveRecord()">Save</button>
       </div>
     </div>
-    <button class="btn btn-primary" onclick="openAdd()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      Add Record
-    </button>
   </div>
 
-  <!-- TABLE -->
-  <div class="table-wrap">
-    <table>
-      <thead id="tableHead">
-        <tr>
-          <th>Date</th><th>Category</th><th>Amount</th>
-          <th>Notes</th><th>Entered By</th><th style="width:80px">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <tr><td colspan="6" class="empty-state">Loading…</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-</div><!-- /app-shell -->
-
-<!-- ADD / EDIT MODAL -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modalTitle">Add Expense</div>
-      <button class="modal-close" onclick="closeModal()">×</button>
-    </div>
-
-    <!-- Daily: Date field -->
-    <div class="form-row" id="fieldDateWrap">
-      <label class="form-label">Date</label>
-      <input type="date" id="fieldDate" class="form-input" />
-    </div>
-
-    <!-- Monthly: Month field -->
-    <div class="form-row" id="fieldMonthWrap" style="display:none">
-      <label class="form-label">Month</label>
-      <input type="month" id="fieldMonth" class="form-input" />
-    </div>
-
-    <div class="form-row">
-      <label class="form-label">Category</label>
-      <select id="fieldCategory" class="form-select"></select>
-    </div>
-
-    <div class="form-row">
-      <label class="form-label">Amount (₱)</label>
-      <input type="number" id="fieldAmount" class="form-input" min="0.01" step="0.01" placeholder="0.00" />
-    </div>
-
-    <div class="form-row">
-      <label class="form-label">Notes</label>
-      <textarea id="fieldNotes" class="form-textarea" placeholder="Optional note…"></textarea>
-    </div>
-
-    <!-- Daily only: Entered By -->
-    <div class="form-row" id="fieldEnteredWrap">
-      <label class="form-label">Entered By</label>
-      <input type="text" id="fieldEnteredBy" class="form-input" placeholder="e.g. Anghelito" />
-    </div>
-
-    <!-- Monthly only: Recurring -->
-    <div class="form-row" id="fieldRecurWrap" style="display:none">
-      <label class="form-label">Recurring</label>
-      <select id="fieldRecurring" class="form-select">
-        <option value="Yes">Yes</option>
-        <option value="No" selected>No</option>
-      </select>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveRecord()">Save</button>
+  <!-- CONFIRM DELETE -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+      <div class="confirm-title">Delete this record?</div>
+      <div class="confirm-body">This will permanently remove the entry from your Google Sheet. This cannot be undone.
+      </div>
+      <div class="confirm-actions">
+        <button class="btn"
+          onclick="document.getElementById('confirmOverlay').classList.remove('open'); state.pendingDelete=null;">Cancel</button>
+        <button class="btn btn-danger" onclick="executeDelete()">Delete</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- CONFIRM DELETE -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <div class="confirm-title">Delete this record?</div>
-    <div class="confirm-body">This will permanently remove the entry from your Google Sheet. This cannot be undone.</div>
-    <div class="confirm-actions">
-      <button class="btn" onclick="document.getElementById('confirmOverlay').classList.remove('open'); state.pendingDelete=null;">Cancel</button>
-      <button class="btn btn-danger" onclick="executeDelete()">Delete</button>
-    </div>
-  </div>
-</div>
+  <!-- TOAST -->
+  <div class="toast-container" id="toastContainer"></div>
 
-<!-- TOAST -->
-<div class="toast-container" id="toastContainer"></div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
+
 </html>
