@@ -61,8 +61,10 @@
           </select>
           <span id="catIndicator" class="dropdown-indicator loading" title="Loading categories…"></span>
         </div>
-        <div id="monthFilterWrap">
+        <div id="monthFilterWrap" style="display:flex;align-items:center;gap:6px;">
           <input type="month" id="monthFilter" class="filter-select" />
+          <button class="btn btn-sm" id="clearMonthBtn" onclick="clearMonthFilter()" title="Show all months"
+            style="white-space:nowrap;color:var(--ink-light);">All months</button>
         </div>
       </div>
       <button class="btn btn-primary" onclick="openAdd()">

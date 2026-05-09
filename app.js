@@ -17,7 +17,7 @@ let state = {
   employees: [],
   search: '',
   filterCat: '',
-  filterMonth: '',
+  filterMonth: currentMonthStr(), // default to current month
   sortCol: 'date',        // 'date' | 'category' | 'amount'
   sortDir: 'desc',        // 'asc' | 'desc'
   editing: null,
@@ -398,12 +398,12 @@ function switchTab(tab) {
   state.tab = tab;
   state.search = '';
   state.filterCat = '';
-  state.filterMonth = '';
+  state.filterMonth = state.tab === 'daily' ? currentMonthStr() : '';
   state.sortCol = 'date';
   state.sortDir = 'desc';
   document.getElementById('searchInput').value = '';
   document.getElementById('filterCat').value = '';
-  document.getElementById('monthFilter').value = '';
+  document.getElementById('monthFilter').value = state.tab === 'daily' ? currentMonthStr() : '';
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
@@ -507,7 +507,16 @@ function showToast(msg, type = '') {
 }
 
 // ── EVENT LISTENERS ───────────────────────────────────────────
+function clearMonthFilter() {
+  state.filterMonth = '';
+  document.getElementById('monthFilter').value = '';
+  applyFilters(); renderStats(); renderTable();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Set month picker to current month on load
+  const mf = document.getElementById('monthFilter');
+  if (mf) mf.value = currentMonthStr();
   document.getElementById('searchInput').addEventListener('input', e => {
     state.search = e.target.value;
     applyFilters(); renderStats(); renderTable();
