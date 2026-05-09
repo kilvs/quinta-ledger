@@ -6,7 +6,7 @@
 // Apps Script → Deploy → New Deployment → Web App → Copy URL
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxOa5hROBo_BMSxb0FhkmIcYD75NuB0OvQ2T8U8ZuFcjzon5j7LsFIgowKzYDZzVWzdYA/exec';
+const API_URL = 'YOUR_WEB_APP_URL_HERE';
 
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
@@ -220,27 +220,6 @@ function renderTable() {
       <td class="td-amount">${amtFmt}</td>
       <td class="hide-mobile">${col4}</td>
       <td class="hide-mobile">${col5}</td>
-      <td class="td-actions">
-        <button class="btn btn-sm" onclick="openEdit(${r.rowIndex})">${editSvg}</button>
-        <button class="btn btn-sm btn-danger" onclick="confirmDelete(${r.rowIndex})">${delSvg}</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-const recurBadge = isMonthly && recurring
-  ? `<span class="badge ${recurring === 'Yes' ? 'badge-yes' : 'badge-no'}" style="margin-left:6px">${recurring}</span>`
-  : '';
-const subParts = [notes, !isMonthly ? enteredBy : ''].filter(Boolean);
-const subLine = subParts.length ? `<div class="td-sub">${esc(subParts.join(' \u00B7 '))}</div>` : '';
-
-return `<tr>
-      <td class="td-info">
-        <div class="td-info-date">${esc(date)}</div>
-        <div class="td-info-cat">${esc(cat)}${recurBadge}</div>
-        ${subLine}
-      </td>
-      <td class="td-amount">${amtFmt}</td>
       <td class="td-actions">
         <button class="btn btn-sm" onclick="openEdit(${r.rowIndex})">${editSvg}</button>
         <button class="btn btn-sm btn-danger" onclick="confirmDelete(${r.rowIndex})">${delSvg}</button>
