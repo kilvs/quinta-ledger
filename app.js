@@ -196,6 +196,9 @@ function renderTable() {
     return;
   }
 
+  const editSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+  const delSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
+
   tbody.innerHTML = rows.map(r => {
     const isMonthly = state.tab === 'monthly';
     const date = isMonthly ? (r['Month (YYYY-MM)'] || '') : (r['Date'] || '');
@@ -204,39 +207,44 @@ function renderTable() {
     const notes = r['Notes'] || '';
     const recurring = r['Recurring (Y/N)'] || '';
     const enteredBy = r['Entered By'] || '';
-    const amtFmt = '₱' + amount.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+    const amtFmt = '\u20B1' + amount.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-    const editBtn = `<button class="btn btn-sm" onclick="openEdit(${r.rowIndex})" title="Edit">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-        <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-      </svg></button>`;
-    const delBtn = `<button class="btn btn-sm btn-danger" onclick="confirmDelete(${r.rowIndex})" title="Delete">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-        <path d="M10 11v6M14 11v6"/>
-      </svg></button>`;
-
-    // Sub-info shown under category on mobile
-    const subParts = [];
-    if (notes) subParts.push(esc(notes));
-    if (enteredBy && !isMonthly) subParts.push('<span class="sub-entered">' + esc(enteredBy) + '</span>');
-    if (isMonthly && recurring) subParts.push('<span class="badge ' + (recurring === 'Yes' ? 'badge-yes' : 'badge-no') + '">' + recurring + '</span>');
-    const subInfo = subParts.length ? `<div class="td-sub">${subParts.join(' · ')}</div>` : '';
-
-    const extraCol = isMonthly
-      ? `<td class="desktop-only"><span class="badge ${recurring === 'Yes' ? 'badge-yes' : 'badge-no'}">${recurring || '—'}</span></td>`
-      : `<td class="desktop-only td-notes" title="${esc(notes)}">${esc(notes) || '—'}</td>`;
-    const enteredCol = `<td class="desktop-only td-notes" title="${esc(isMonthly ? notes : enteredBy)}">${esc(isMonthly ? notes : enteredBy) || '—'}</td>`;
+    const col4 = isMonthly
+      ? `<span class="badge ${recurring === 'Yes' ? 'badge-yes' : 'badge-no'}">${recurring || '—'}</span>`
+      : esc(notes) || '—';
+    const col5 = isMonthly ? (esc(notes) || '—') : (esc(enteredBy) || '—');
 
     return `<tr>
       <td class="td-date">${esc(date)}</td>
-      <td class="td-cat">${esc(cat)}${subInfo}</td>
+      <td class="td-cat">${esc(cat)}</td>
       <td class="td-amount">${amtFmt}</td>
-      ${extraCol}
-      ${enteredCol}
-      <td class="td-actions">${editBtn}${delBtn}</td>
+      <td class="hide-mobile">${col4}</td>
+      <td class="hide-mobile">${col5}</td>
+      <td class="td-actions">
+        <button class="btn btn-sm" onclick="openEdit(${r.rowIndex})">${editSvg}</button>
+        <button class="btn btn-sm btn-danger" onclick="confirmDelete(${r.rowIndex})">${delSvg}</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+const recurBadge = isMonthly && recurring
+  ? `<span class="badge ${recurring === 'Yes' ? 'badge-yes' : 'badge-no'}" style="margin-left:6px">${recurring}</span>`
+  : '';
+const subParts = [notes, !isMonthly ? enteredBy : ''].filter(Boolean);
+const subLine = subParts.length ? `<div class="td-sub">${esc(subParts.join(' \u00B7 '))}</div>` : '';
+
+return `<tr>
+      <td class="td-info">
+        <div class="td-info-date">${esc(date)}</div>
+        <div class="td-info-cat">${esc(cat)}${recurBadge}</div>
+        ${subLine}
+      </td>
+      <td class="td-amount">${amtFmt}</td>
+      <td class="td-actions">
+        <button class="btn btn-sm" onclick="openEdit(${r.rowIndex})">${editSvg}</button>
+        <button class="btn btn-sm btn-danger" onclick="confirmDelete(${r.rowIndex})">${delSvg}</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -417,23 +425,17 @@ function switchTab(tab) {
   // Swap table headers with sortable columns
   const thead = document.getElementById('tableHead');
   const isMonthly = tab === 'monthly';
-  thead.innerHTML = isMonthly
-    ? `<tr>
-        <th class="col-desktop-only" data-sort="date" onclick="setSort('date')" style="cursor:pointer">Month<span class="sort-arrow"> ↓</span></th>
-        <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
-        <th data-sort="amount"   onclick="setSort('amount')"   style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
-        <th class="col-desktop-only">Recurring</th>
-        <th class="col-desktop-only">Notes</th>
-        <th style="width:80px">Actions</th>
-       </tr>`
-    : `<tr>
-        <th class="col-desktop-only" data-sort="date" onclick="setSort('date')" style="cursor:pointer">Date<span class="sort-arrow"> ↓</span></th>
-        <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
-        <th data-sort="amount"   onclick="setSort('amount')"   style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
-        <th class="col-desktop-only">Notes</th>
-        <th class="col-desktop-only">Entered By</th>
-        <th style="width:80px">Actions</th>
-       </tr>`;
+  const dateLbl = isMonthly ? 'Month' : 'Date';
+  const col4lbl = isMonthly ? 'Recurring' : 'Notes';
+  const col5lbl = isMonthly ? 'Notes' : 'Entered By';
+  thead.innerHTML = `<tr>
+    <th onclick="setSort('date')" style="cursor:pointer">${dateLbl}<span class="sort-arrow"> ↓</span></th>
+    <th onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
+    <th onclick="setSort('amount')" style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
+    <th class="hide-mobile">${col4lbl}</th>
+    <th class="hide-mobile">${col5lbl}</th>
+    <th style="width:88px">Actions</th>
+  </tr>`;
   setCategoryDropdownState(state.categories[tab].length ? 'ready' : 'loading');
   renderMonthFilter();
   if (state.tab === 'daily') populateMonthSelect();

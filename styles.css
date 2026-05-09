@@ -280,6 +280,12 @@ body {
   color: var(--red);
 }
 
+.td-sub {
+  font-size: 11px;
+  color: var(--ink-light);
+  margin-top: 3px;
+}
+
 /* ── TABLE ───────────────────────────────────────────────────── */
 .table-wrap {
   overflow-x: auto;
@@ -318,9 +324,7 @@ thead th {
   color: var(--ink-light);
   margin-top: 2px;
 }
-.cell-date-mobile {
-  display: none;
-}
+
 thead th[data-sort]:hover {
   background: var(--cream-border);
   color: var(--ink);

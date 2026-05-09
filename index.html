@@ -82,15 +82,12 @@
       <table id="mainTable">
         <thead id="tableHead">
           <tr>
-            <th data-sort="date" onclick="setSort('date')" style="cursor:pointer">Date<span class="sort-arrow"> ↓</span>
-            </th>
-            <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span
-                class="sort-arrow"> ↕</span></th>
-            <th data-sort="amount" onclick="setSort('amount')" style="cursor:pointer">Amount<span class="sort-arrow">
-                ↕</span></th>
-            <th class="col-desktop-only">Notes</th>
-            <th class="col-desktop-only">Entered By</th>
-            <th style="width:80px">Actions</th>
+            <th onclick="setSort('date')" style="cursor:pointer">Date<span class="sort-arrow"> ↓</span></th>
+            <th onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
+            <th onclick="setSort('amount')" style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
+            <th class="hide-mobile">Notes</th>
+            <th class="hide-mobile">Entered By</th>
+            <th style="width:88px">Actions</th>
           </tr>
         </thead>
         <tbody id="tableBody">
