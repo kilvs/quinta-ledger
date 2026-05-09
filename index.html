@@ -55,7 +55,12 @@
     <div class="toolbar">
       <div class="toolbar-left">
         <input type="search" id="searchInput" class="search-input" placeholder="Search…" />
-        <select id="filterCat" class="filter-select" onchange=""></select>
+        <div class="dropdown-wrap">
+          <select id="filterCat" class="filter-select" onchange="" disabled>
+            <option>Loading categories…</option>
+          </select>
+          <span id="catIndicator" class="dropdown-indicator loading" title="Loading categories…"></span>
+        </div>
         <div id="monthFilterWrap">
           <input type="month" id="monthFilter" class="filter-select" />
         </div>
@@ -129,7 +134,10 @@
 
       <!-- Daily only: Entered By -->
       <div class="form-row" id="fieldEnteredWrap">
-        <label class="form-label">Entered By</label>
+        <label class="form-label" style="display:flex;align-items:center;gap:7px;">
+          Entered By
+          <span id="empIndicator" class="dropdown-indicator loading" title="Loading employees…"></span>
+        </label>
         <select id="fieldEnteredBy" class="form-select">
           <option value="">Loading employees…</option>
         </select>

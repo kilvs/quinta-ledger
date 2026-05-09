@@ -14,11 +14,13 @@ let state = {
   records: [],
   filtered: [],
   categories: { daily: [], monthly: [] },
-  employees: [],            // active employees from external sheet
+  employees: [],
   search: '',
   filterCat: '',
   filterMonth: '',
-  editing: null,          // record being edited
+  sortCol: 'date',        // 'date' | 'category' | 'amount'
+  sortDir: 'desc',        // 'asc' | 'desc'
+  editing: null,
   pendingDelete: null
 };
 
@@ -41,19 +43,35 @@ async function apiPost(body) {
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
   setLoading(true);
-  // Load each independently so one failure never blocks the others
+  setCategoryDropdownState('loading');
+  setEmployeeDropdownState('loading');
+
   try {
     const cats = await apiFetch({ action: 'categories' });
     if (cats.success) {
       state.categories.daily = cats.daily;
       state.categories.monthly = cats.monthly;
+      setCategoryDropdownState('ready');
+    } else {
+      setCategoryDropdownState('error');
     }
-  } catch (e) { console.warn('Categories failed:', e.message); }
+  } catch (e) {
+    console.warn('Categories failed:', e.message);
+    setCategoryDropdownState('error');
+  }
 
   try {
     const emps = await apiFetch({ action: 'employees' });
-    if (emps.success) state.employees = emps.employees || [];
-  } catch (e) { console.warn('Employees failed:', e.message); }
+    if (emps.success) {
+      state.employees = emps.employees || [];
+      setEmployeeDropdownState('ready');
+    } else {
+      setEmployeeDropdownState('error');
+    }
+  } catch (e) {
+    console.warn('Employees failed:', e.message);
+    setEmployeeDropdownState('error');
+  }
 
   try {
     await loadRecords();
@@ -89,9 +107,9 @@ function applyFilters() {
   const q = state.search.toLowerCase().trim();
 
   if (q) {
-    rows = rows.filter(r => {
-      return Object.values(r).some(v => String(v).toLowerCase().includes(q));
-    });
+    rows = rows.filter(r =>
+      Object.values(r).some(v => String(v).toLowerCase().includes(q))
+    );
   }
   if (state.filterCat) {
     rows = rows.filter(r => r['Category'] === state.filterCat);
@@ -99,28 +117,74 @@ function applyFilters() {
   if (state.tab === 'daily' && state.filterMonth) {
     rows = rows.filter(r => String(r['Date'] || '').startsWith(state.filterMonth));
   }
-  // Sort by date descending
+
+  // Sort
   rows.sort((a, b) => {
-    const da = a['Date'] || a['Month (YYYY-MM)'] || '';
-    const db = b['Date'] || b['Month (YYYY-MM)'] || '';
-    return db.localeCompare(da);
+    let va, vb;
+    if (state.sortCol === 'amount') {
+      va = parseFloat(a['Amount']) || 0;
+      vb = parseFloat(b['Amount']) || 0;
+      return state.sortDir === 'asc' ? va - vb : vb - va;
+    } else if (state.sortCol === 'category') {
+      va = String(a['Category'] || '').toLowerCase();
+      vb = String(b['Category'] || '').toLowerCase();
+    } else {
+      // date (default)
+      va = a['Date'] || a['Month (YYYY-MM)'] || '';
+      vb = b['Date'] || b['Month (YYYY-MM)'] || '';
+    }
+    if (va < vb) return state.sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return state.sortDir === 'asc' ? 1 : -1;
+    return 0;
   });
+
   state.filtered = rows;
 }
 
 // ── RENDER ────────────────────────────────────────────────────
 function renderStats() {
-  const rows = state.records;
+  // Use filtered rows so stats reflect current search/filter
+  const rows = state.filtered.length > 0 || isFiltering() ? state.filtered : state.records;
   const total = rows.reduce((s, r) => s + (parseFloat(r['Amount']) || 0), 0);
   const count = rows.length;
-
-  // Most recent date
   const dates = rows.map(r => r['Date'] || r['Month (YYYY-MM)'] || '').filter(Boolean).sort();
   const latest = dates.length ? dates[dates.length - 1] : '—';
 
   document.getElementById('statCount').textContent = count;
   document.getElementById('statTotal').textContent = '₱' + total.toLocaleString('en-PH', { minimumFractionDigits: 2 });
   document.getElementById('statLatest').textContent = latest;
+}
+
+function isFiltering() {
+  return state.search || state.filterCat || state.filterMonth;
+}
+
+function setSort(col) {
+  if (state.sortCol === col) {
+    state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.sortCol = col;
+    state.sortDir = col === 'amount' ? 'desc' : 'asc';
+  }
+  applyFilters();
+  renderStats();
+  renderTable();
+  renderSortIndicators();
+}
+
+function renderSortIndicators() {
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    const col = th.dataset.sort;
+    const arrow = th.querySelector('.sort-arrow');
+    if (!arrow) return;
+    if (col === state.sortCol) {
+      arrow.textContent = state.sortDir === 'asc' ? ' ↑' : ' ↓';
+      th.classList.add('sorted');
+    } else {
+      arrow.textContent = ' ↕';
+      th.classList.remove('sorted');
+    }
+  });
 }
 
 function renderTable() {
@@ -335,25 +399,31 @@ function switchTab(tab) {
   state.search = '';
   state.filterCat = '';
   state.filterMonth = '';
+  state.sortCol = 'date';
+  state.sortDir = 'desc';
   document.getElementById('searchInput').value = '';
   document.getElementById('filterCat').value = '';
   document.getElementById('monthFilter').value = '';
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
-  // Swap table headers
+  // Swap table headers with sortable columns
   const thead = document.getElementById('tableHead');
   const isMonthly = tab === 'monthly';
   thead.innerHTML = isMonthly
     ? `<tr>
-        <th>Month</th><th>Category</th><th>Amount</th>
+        <th data-sort="date"     onclick="setSort('date')"    style="cursor:pointer">Month<span class="sort-arrow"> ↓</span></th>
+        <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
+        <th data-sort="amount"   onclick="setSort('amount')"  style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
         <th>Recurring</th><th>Notes</th><th style="width:80px">Actions</th>
        </tr>`
     : `<tr>
-        <th>Date</th><th>Category</th><th>Amount</th>
+        <th data-sort="date"     onclick="setSort('date')"    style="cursor:pointer">Date<span class="sort-arrow"> ↓</span></th>
+        <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
+        <th data-sort="amount"   onclick="setSort('amount')"  style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
         <th>Notes</th><th>Entered By</th><th style="width:80px">Actions</th>
        </tr>`;
-  renderCategoryFilter();
+  setCategoryDropdownState(state.categories[tab].length ? 'ready' : 'loading');
   renderMonthFilter();
   loadRecords();
 }
@@ -381,6 +451,40 @@ function setLoading(on) {
   document.getElementById('loadingBar').classList.toggle('active', on);
 }
 
+function setCategoryDropdownState(status) {
+  const sel = document.getElementById('filterCat');
+  const indicator = document.getElementById('catIndicator');
+  if (!sel) return;
+  if (status === 'loading') {
+    sel.disabled = true;
+    sel.innerHTML = '<option>Loading categories…</option>';
+    if (indicator) { indicator.className = 'dropdown-indicator loading'; indicator.title = 'Loading categories…'; }
+  } else if (status === 'ready') {
+    sel.disabled = false;
+    renderCategoryFilter();
+    if (indicator) { indicator.className = 'dropdown-indicator ready'; indicator.title = 'Categories loaded'; }
+  } else {
+    sel.disabled = false;
+    sel.innerHTML = '<option value="">All categories</option>';
+    if (indicator) { indicator.className = 'dropdown-indicator error'; indicator.title = 'Failed to load categories'; }
+  }
+}
+
+function setEmployeeDropdownState(status) {
+  const indicator = document.getElementById('empIndicator');
+  if (!indicator) return;
+  if (status === 'loading') {
+    indicator.className = 'dropdown-indicator loading';
+    indicator.title = 'Loading employees…';
+  } else if (status === 'ready') {
+    indicator.className = 'dropdown-indicator ready';
+    indicator.title = state.employees.length + ' employee(s) loaded';
+  } else {
+    indicator.className = 'dropdown-indicator error';
+    indicator.title = 'Failed to load employees';
+  }
+}
+
 function setApiStatus(status) {
   const dot = document.getElementById('apiDot');
   const txt = document.getElementById('apiTxt');
@@ -406,15 +510,15 @@ function showToast(msg, type = '') {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('searchInput').addEventListener('input', e => {
     state.search = e.target.value;
-    applyFilters(); renderTable();
+    applyFilters(); renderStats(); renderTable();
   });
   document.getElementById('filterCat').addEventListener('change', e => {
     state.filterCat = e.target.value;
-    applyFilters(); renderTable();
+    applyFilters(); renderStats(); renderTable();
   });
   document.getElementById('monthFilter').addEventListener('change', e => {
     state.filterMonth = e.target.value;
-    applyFilters(); renderTable();
+    applyFilters(); renderStats(); renderTable();
   });
 
   // Close modal on backdrop click
