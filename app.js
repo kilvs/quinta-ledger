@@ -41,19 +41,21 @@ async function apiPost(body) {
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
   setLoading(true);
+  // Load each independently so one failure never blocks the others
   try {
-    // Load categories and employees in parallel
-    const [cats, emps] = await Promise.all([
-      apiFetch({ action: 'categories' }),
-      apiFetch({ action: 'employees' })
-    ]);
+    const cats = await apiFetch({ action: 'categories' });
     if (cats.success) {
       state.categories.daily = cats.daily;
       state.categories.monthly = cats.monthly;
     }
-    if (emps.success) {
-      state.employees = emps.employees || [];
-    }
+  } catch (e) { console.warn('Categories failed:', e.message); }
+
+  try {
+    const emps = await apiFetch({ action: 'employees' });
+    if (emps.success) state.employees = emps.employees || [];
+  } catch (e) { console.warn('Employees failed:', e.message); }
+
+  try {
     await loadRecords();
     setApiStatus('connected');
   } catch (e) {
