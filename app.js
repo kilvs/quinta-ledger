@@ -6,7 +6,7 @@
 // Apps Script → Deploy → New Deployment → Web App → Copy URL
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyNhaarRnzJeTGwjdEBgShbrwqRK4Gb4FiIgLGBq8Nha7zNr3Ogg4W2AlQp2fWd4jX1Xg/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwecSHu0QbSg7kxaBsWDc2WuazFR--bOxvAzVVL8xLTN1m52oayGjVFX5Me41rhJ6QgtQ/exec';
 
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
