@@ -204,32 +204,39 @@ function renderTable() {
     const notes = r['Notes'] || '';
     const recurring = r['Recurring (Y/N)'] || '';
     const enteredBy = r['Entered By'] || '';
+    const amtFmt = '₱' + amount.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+    const editBtn = `<button class="btn btn-sm" onclick="openEdit(${r.rowIndex})" title="Edit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+        <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg></button>`;
+    const delBtn = `<button class="btn btn-sm btn-danger" onclick="confirmDelete(${r.rowIndex})" title="Delete">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+      </svg></button>`;
+
+    // Sub-info shown under category on mobile
+    const subParts = [];
+    if (notes) subParts.push(esc(notes));
+    if (enteredBy && !isMonthly) subParts.push('<span class="sub-entered">' + esc(enteredBy) + '</span>');
+    if (isMonthly && recurring) subParts.push('<span class="badge ' + (recurring === 'Yes' ? 'badge-yes' : 'badge-no') + '">' + recurring + '</span>');
+    const subInfo = subParts.length ? `<div class="td-sub">${subParts.join(' · ')}</div>` : '';
 
     const extraCol = isMonthly
-      ? `<td><span class="badge ${recurring === 'Yes' ? 'badge-yes' : 'badge-no'}">${recurring || '—'}</span></td>`
-      : `<td class="td-notes" title="${esc(notes)}">${esc(notes) || '—'}</td>`;
+      ? `<td class="desktop-only"><span class="badge ${recurring === 'Yes' ? 'badge-yes' : 'badge-no'}">${recurring || '—'}</span></td>`
+      : `<td class="desktop-only td-notes" title="${esc(notes)}">${esc(notes) || '—'}</td>`;
+    const enteredCol = `<td class="desktop-only td-notes" title="${esc(isMonthly ? notes : enteredBy)}">${esc(isMonthly ? notes : enteredBy) || '—'}</td>`;
 
     return `<tr>
       <td class="td-date">${esc(date)}</td>
-      <td class="td-cat">${esc(cat)}</td>
-      <td class="td-amount">₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+      <td class="td-cat">${esc(cat)}${subInfo}</td>
+      <td class="td-amount">${amtFmt}</td>
       ${extraCol}
-      <td class="td-notes" title="${esc(isMonthly ? notes : enteredBy)}">${esc(isMonthly ? notes : enteredBy) || '—'}</td>
-      <td class="td-actions">
-        <button class="btn btn-sm" onclick="openEdit(${r.rowIndex})" title="Edit">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-            <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-        </button>
-        <button class="btn btn-sm btn-danger" onclick="confirmDelete(${r.rowIndex})" title="Delete">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-            <path d="M10 11v6M14 11v6"/>
-          </svg>
-        </button>
-      </td>
+      ${enteredCol}
+      <td class="td-actions">${editBtn}${delBtn}</td>
     </tr>`;
   }).join('');
 }
@@ -412,19 +419,24 @@ function switchTab(tab) {
   const isMonthly = tab === 'monthly';
   thead.innerHTML = isMonthly
     ? `<tr>
-        <th data-sort="date"     onclick="setSort('date')"    style="cursor:pointer">Month<span class="sort-arrow"> ↓</span></th>
+        <th data-sort="date"     onclick="setSort('date')"     style="cursor:pointer">Month<span class="sort-arrow"> ↓</span></th>
         <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
-        <th data-sort="amount"   onclick="setSort('amount')"  style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
-        <th>Recurring</th><th>Notes</th><th style="width:80px">Actions</th>
+        <th data-sort="amount"   onclick="setSort('amount')"   style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
+        <th class="col-hide-sm">Recurring</th>
+        <th class="col-hide-sm">Notes</th>
+        <th style="width:80px">Actions</th>
        </tr>`
     : `<tr>
-        <th data-sort="date"     onclick="setSort('date')"    style="cursor:pointer">Date<span class="sort-arrow"> ↓</span></th>
+        <th data-sort="date"     onclick="setSort('date')"     style="cursor:pointer">Date<span class="sort-arrow"> ↓</span></th>
         <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
-        <th data-sort="amount"   onclick="setSort('amount')"  style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
-        <th>Notes</th><th>Entered By</th><th style="width:80px">Actions</th>
+        <th data-sort="amount"   onclick="setSort('amount')"   style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
+        <th class="col-hide-sm">Notes</th>
+        <th class="col-hide-sm">Entered By</th>
+        <th style="width:80px">Actions</th>
        </tr>`;
   setCategoryDropdownState(state.categories[tab].length ? 'ready' : 'loading');
   renderMonthFilter();
+  if (state.tab === 'daily') populateMonthSelect();
   loadRecords();
 }
 
@@ -513,10 +525,25 @@ function clearMonthFilter() {
   applyFilters(); renderStats(); renderTable();
 }
 
+function populateMonthSelect() {
+  const sel = document.getElementById('monthFilter');
+  if (!sel) return;
+  const today = new Date();
+  const opts = ['<option value="">All months</option>'];
+  // Generate last 12 months
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const val = d.toISOString().slice(0, 7);
+    const lbl = d.toLocaleString('en-PH', { month: 'long', year: 'numeric' });
+    const sel_ = i === 0 ? ' selected' : '';
+    opts.push(`<option value="${val}"${sel_}>${lbl}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+  sel.value = currentMonthStr();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Set month picker to current month on load
-  const mf = document.getElementById('monthFilter');
-  if (mf) mf.value = currentMonthStr();
+  populateMonthSelect();
   document.getElementById('searchInput').addEventListener('input', e => {
     state.search = e.target.value;
     applyFilters(); renderStats(); renderTable();
