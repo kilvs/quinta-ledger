@@ -419,19 +419,19 @@ function switchTab(tab) {
   const isMonthly = tab === 'monthly';
   thead.innerHTML = isMonthly
     ? `<tr>
-        <th data-sort="date"     onclick="setSort('date')"     style="cursor:pointer">Month<span class="sort-arrow"> ↓</span></th>
+        <th class="col-desktop-only" data-sort="date" onclick="setSort('date')" style="cursor:pointer">Month<span class="sort-arrow"> ↓</span></th>
         <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
         <th data-sort="amount"   onclick="setSort('amount')"   style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
-        <th class="col-hide-sm">Recurring</th>
-        <th class="col-hide-sm">Notes</th>
+        <th class="col-desktop-only">Recurring</th>
+        <th class="col-desktop-only">Notes</th>
         <th style="width:80px">Actions</th>
        </tr>`
     : `<tr>
-        <th data-sort="date"     onclick="setSort('date')"     style="cursor:pointer">Date<span class="sort-arrow"> ↓</span></th>
+        <th class="col-desktop-only" data-sort="date" onclick="setSort('date')" style="cursor:pointer">Date<span class="sort-arrow"> ↓</span></th>
         <th data-sort="category" onclick="setSort('category')" style="cursor:pointer">Category<span class="sort-arrow"> ↕</span></th>
         <th data-sort="amount"   onclick="setSort('amount')"   style="cursor:pointer">Amount<span class="sort-arrow"> ↕</span></th>
-        <th class="col-hide-sm">Notes</th>
-        <th class="col-hide-sm">Entered By</th>
+        <th class="col-desktop-only">Notes</th>
+        <th class="col-desktop-only">Entered By</th>
         <th style="width:80px">Actions</th>
        </tr>`;
   setCategoryDropdownState(state.categories[tab].length ? 'ready' : 'loading');

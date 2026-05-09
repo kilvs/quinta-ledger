@@ -306,6 +306,21 @@ thead th {
   white-space: nowrap;
   user-select: none;
 }
+
+/* ── CELL CARD STRUCTURE ─────────────────────────────────────── */
+.cell-main {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink);
+}
+.cell-sub {
+  font-size: 11px;
+  color: var(--ink-light);
+  margin-top: 2px;
+}
+.cell-date-mobile {
+  display: none;
+}
 thead th[data-sort]:hover {
   background: var(--cream-border);
   color: var(--ink);
@@ -658,7 +673,7 @@ select:disabled {
 
 /* Hide less-important columns on small screens */
 @media (max-width: 640px) {
-  .col-hide-sm {
+  .col-desktop-only {
     display: none;
   }
 }
